@@ -1,0 +1,10 @@
+---
+- name: Emergency shutdown
+  hosts: sre_servers
+  become: true
+  serial: 1
+
+  tasks:
+    - name: Power off server
+      ansible.builtin.command:
+        cmd: systemctl poweroff

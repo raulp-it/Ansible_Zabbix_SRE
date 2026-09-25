@@ -1,0 +1,10 @@
+---
+- name: Prepare SRE server
+  hosts: sre_servers
+
+  tasks:
+    - name: Install htop
+      apt:
+        name: htop
+        state: present
+        update_cache: true

@@ -1,0 +1,17 @@
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m command \
+  -a "systemctl is-active zabbix-agent2" \
+  -k -K
+
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m shell \
+  -a "ss -lntp | grep ':10050' || true" \
+  -k -K
+
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m command \
+  -a "zabbix_agent2 --version" \
+  -k -K

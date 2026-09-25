@@ -1,0 +1,11 @@
+---
+- name: Install Webmin
+  hosts: sre_servers
+
+  tasks:
+    - name: Install Webmin
+      ansible.builtin.apt:
+        name: webmin
+        state: present
+        update_cache: true
+

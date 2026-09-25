@@ -1,0 +1,28 @@
+ansible-playbook -i inventory.ini install_webmin.yml \
+  -k -K \
+  -e 'ansible_become_exe=/usr/bin/sudo.ws'
+---
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m command \
+  -a "head -40 /tmp/webmin-setup-repo.sh" \
+  -k -K \
+  -e 'ansible_become_exe=/usr/bin/sudo.ws'
+---
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m command \
+  -a "grep -E 'apt|repository|key|gpg|signed' /tmp/webmin-setup-repo.sh | head -30" \
+  -k -K \
+  -e 'ansible_become_exe=/usr/bin/sudo.ws'
+---
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m command \
+  -a "/tmp/webmin-setup-repo.sh --force" \
+  -k -K \
+  -e 'ansible_become_exe=/usr/bin/sudo.ws'
+---
+ansible-playbook -i inventory.ini update_server.yml -k -K --check
+---
+

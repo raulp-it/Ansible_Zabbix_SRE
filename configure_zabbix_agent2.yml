@@ -1,0 +1,19 @@
+---
+- name: Configure Zabbix Agent 2
+  hosts: sre_servers
+  become: true
+
+  tasks:
+    - name: Set Zabbix agent hostname
+      ansible.builtin.lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+        regexp: '^Hostname='
+        line: 'Hostname=servicios1'
+        backup: true
+      notify: Restart Zabbix Agent 2
+
+  handlers:
+    - name: Restart Zabbix Agent 2
+      ansible.builtin.systemd:
+        name: zabbix-agent2
+        state: restarted

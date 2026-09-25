@@ -1,0 +1,86 @@
+---
+- name: SRE Health Check
+  hosts: sre_servers
+  become: true
+
+  tasks:
+
+    - name: Get hostname
+      ansible.builtin.command:
+        cmd: hostname
+      register: hostname_result
+      changed_when: false
+
+    - name: Get OS information
+      ansible.builtin.command:
+        cmd: grep PRETTY_NAME /etc/os-release
+      register: os_result
+      changed_when: false
+
+    - name: Get uptime
+      ansible.builtin.command:
+        cmd: uptime -p
+      register: uptime_result
+      changed_when: false
+
+    - name: Check Nginx
+      ansible.builtin.systemd:
+        name: nginx
+      register: nginx_status
+      changed_when: false
+
+    - name: Check Webmin
+      ansible.builtin.systemd:
+        name: webmin
+      register: webmin_status
+      changed_when: false
+
+    - name: Check Zabbix Agent 2
+      ansible.builtin.systemd:
+        name: zabbix-agent2
+      register: zabbix_status
+      changed_when: false
+
+    - name: Check HTTP
+      ansible.builtin.uri:
+        url: http://127.0.0.1
+        status_code: 200
+      register: http_status
+      changed_when: false
+
+    - name: Get disk usage
+      ansible.builtin.shell:
+        cmd: df -h / | tail -1
+      register: disk_result
+      changed_when: false
+
+    - name: Get memory usage
+      ansible.builtin.shell:
+        cmd: free -h | grep Mem
+      register: memory_result
+      changed_when: false
+
+    - name: Get load average
+      ansible.builtin.shell:
+        cmd: uptime | awk -F'load average:' '{print $2}'
+      register: load_result
+      changed_when: false
+
+    - name: Display health check
+      ansible.builtin.debug:
+        msg:
+          - "========== SRE HEALTH CHECK =========="
+          - "Hostname:       {{ hostname_result.stdout }}"
+          - "OS:             {{ os_result.stdout | regex_replace('^PRETTY_NAME=', '') | replace('\"', '') }}"
+          - "Uptime:         {{ uptime_result.stdout }}"
+          - ""
+          - "Nginx:          {{ nginx_status.status.ActiveState }}"
+          - "Webmin:         {{ webmin_status.status.ActiveState }}"
+          - "Zabbix Agent:   {{ zabbix_status.status.ActiveState }}"
+          - "HTTP:           {{ 'OK' if http_status.status == 200 else 'FAILED' }}"
+          - ""
+          - "Disk /:         {{ disk_result.stdout }}"
+          - "Memory:         {{ memory_result.stdout }}"
+          - "Load Average:   {{ load_result.stdout | trim }}"
+          - ""
+          - "======================================"

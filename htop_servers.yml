@@ -1,0 +1,12 @@
+---
+- name: Obtener una captura de htop
+  hosts: sre_servers
+  tasks:
+    - name: Ejecutar htop en modo batch
+      ansible.builtin.command: htop -b -n 1
+      register: htop_output
+      changed_when: false
+
+    - name: Mostrar el resultado de htop
+      ansible.builtin.debug:
+        var: htop_output.stdout_lines

@@ -1,0 +1,62 @@
+---
+- name: Configure Nginx for SRE Lab
+  hosts: sre_servers
+  become: true
+
+  tasks:
+    - name: Create web root
+      ansible.builtin.file:
+        path: /var/www/sre-lab
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Deploy SRE Lab web page
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/sre-lab/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Configure SRE Lab Nginx site
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-available/sre-lab
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          server {
+              listen 80;
+              listen [::]:80;
+
+              server_name _;
+
+              root /var/www/sre-lab;
+              index index.html;
+
+              location / {
+                  try_files $uri $uri/ =404;
+              }
+          }
+      notify: Reload Nginx
+
+    - name: Enable SRE Lab site
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/sre-lab
+        dest: /etc/nginx/sites-enabled/sre-lab
+        state: link
+      notify: Reload Nginx
+
+    - name: Disable default Nginx site
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Reload Nginx
+
+  handlers:
+    - name: Reload Nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded

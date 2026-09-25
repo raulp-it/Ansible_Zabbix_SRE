@@ -1,0 +1,6 @@
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m command \
+  -a "dpkg -l webmin 2>/dev/null || true" \
+  -k -K \
+  -e 'ansible_become_exe=/usr/bin/sudo.ws'

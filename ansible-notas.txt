@@ -1,0 +1,449 @@
+Comprobacion de healt.
+1. Servicios
+
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m shell \
+  -a "systemctl is-active nginx webmin zabbix-agent2" \
+  -k -K
+}
+
+pn41 | CHANGED | rc=0 >>
+active
+active
+active
+
+2. Puertos:
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m shell \
+  -a "ss -lnt | grep -E ':80 |:10000 |:10050 ' || true" \
+  -k -K
+LISTEN 0      4096         0.0.0.0:10000      0.0.0.0:*   
+LISTEN 0      511          0.0.0.0:80         0.0.0.0:*   
+LISTEN 0      4096               *:10050            *:*   
+LISTEN 0      4096            [::]:10000         [::]:*   
+LISTEN 0      511             [::]:80            [::]:*   
+
+3. HTTP:
+curl http://10.10.30.120
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SCPC Labs - SRE Lab</title>
+</head>
+<body>
+    <h1>SCPC Labs - SRE Lab</h1>
+
+    <h2>servicios1</h2>
+
+    <ul>
+        <li>OS: Ubuntu 26.04.1 LTS</li>
+        <li>Web Server: Nginx</li>
+        <li>Monitoring: Zabbix Agent 2</li>
+        <li>Automation: Ansible</li>
+    </ul>
+
+    <p>Infrastructure managed by Ansible.</p>
+</body>
+</html>
+
+
+-----
+Incidentes:
+
+ansible -i inventory.ini sre_servers \
+  -b -m command \
+  -a "systemctl status nginx --no-pager" \
+  -k -K
+SSH password: 
+BECOME password[defaults to SSH password]: 
+pn41 | FAILED | rc=3 >>
+○ nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+     Active: inactive (dead) since Tue 2026-09-22 23:20:03 UTC; 1min 13s ago
+   Duration: 43min 50.333s
+ Invocation: 78ebc88b90ce4c93a3d0c31e57a73f11
+       Docs: man:nginx(8)
+    Process: 8232 ExecStop=/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx.pid (code=exited, status=0/SUCCESS)
+   Main PID: 1323 (code=exited, status=0/SUCCESS)
+   Mem peak: 6.7M
+        CPU: 48ms
+
+sep 22 22:36:13 servicios1 systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+sep 22 22:36:13 servicios1 systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.
+sep 22 23:20:03 servicios1 systemd[1]: Stopping nginx.service - A high performance web server and a reverse proxy server...
+sep 22 23:20:03 servicios1 systemd[1]: nginx.service: Deactivated successfully.
+sep 22 23:20:03 servicios1 systemd[1]: Stopped nginx.service - A high performance web server and a reverse proxy server.non-zero return code
+
+ansible -i inventory.ini sre_servers \
+  -b -m command \
+  -a "systemctl status nginx --no-pager" \
+  -k -K
+SSH password: 
+BECOME password[defaults to SSH password]: 
+pn41 | FAILED | rc=3 >>
+○ nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+     Active: inactive (dead) since Tue 2026-09-22 23:20:03 UTC; 1min 13s ago
+   Duration: 43min 50.333s
+ Invocation: 78ebc88b90ce4c93a3d0c31e57a73f11
+       Docs: man:nginx(8)
+    Process: 8232 ExecStop=/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx.pid (code=exited, status=0/SUCCESS)
+   Main PID: 1323 (code=exited, status=0/SUCCESS)
+   Mem peak: 6.7M
+        CPU: 48ms
+
+sep 22 22:36:13 servicios1 systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+sep 22 22:36:13 servicios1 systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.
+sep 22 23:20:03 servicios1 systemd[1]: Stopping nginx.service - A high performance web server and a reverse proxy server...
+sep 22 23:20:03 servicios1 systemd[1]: nginx.service: Deactivated successfully.
+sep 22 23:20:03 servicios1 systemd[1]: Stopped nginx.service - A high performance web server and a reverse proxy server.non-zero return code
+
+ansible -i inventory.ini sre_servers \
+  -b -m shell \
+  -a "ss -lnt | grep ':80 ' || true" \
+  -k -K
+SSH password: 
+BECOME password[defaults to SSH password]: 
+pn41 | CHANGED | rc=0 >>
+
+ansible -i inventory.ini sre_servers \
+  -b -m command \
+  -a "journalctl -u nginx -n 30 --no-pager" \
+  -k -K
+SSH password: 
+BECOME password[defaults to SSH password]: 
+pn41 | CHANGED | rc=0 >>
+sep 18 23:53:40 servicios1 systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+sep 18 23:53:40 servicios1 systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.
+sep 19 00:10:56 servicios1 systemd[1]: Reloading nginx.service - A high performance web server and a reverse proxy server...
+sep 19 00:10:56 servicios1 nginx[10985]: 2026/09/19 00:10:56 [notice] 10985#10985: signal process started
+sep 19 00:10:56 servicios1 systemd[1]: Reloaded nginx.service - A high performance web server and a reverse proxy server.
+sep 19 00:28:01 servicios1 systemd[1]: Stopping nginx.service - A high performance web server and a reverse proxy server...
+sep 19 00:28:01 servicios1 systemd[1]: nginx.service: Deactivated successfully.
+sep 19 00:28:01 servicios1 systemd[1]: Stopped nginx.service - A high performance web server and a reverse proxy server.
+-- Boot 535011070a784d54a93d6f3bbf2e6aee --
+sep 22 22:36:13 servicios1 systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+sep 22 22:36:13 servicios1 systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.
+sep 22 23:20:03 servicios1 systemd[1]: Stopping nginx.service - A high performance web server and a reverse proxy server...
+sep 22 23:20:03 servicios1 systemd[1]: nginx.service: Deactivated successfully.
+sep 22 23:20:03 servicios1 systemd[1]: Stopped nginx.service - A high performance web server and a reverse proxy server.
+
+ansible -i inventory.ini sre_servers \
+  -b -m systemd \
+  -a "name=nginx state=started" \
+  -k -K
+SSH password: 
+BECOME password[defaults to SSH password]: 
+pn41 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "name": "nginx",
+    "state": "started",
+    "status": {
+        "ActiveEnterTimestamp": "Tue 2026-09-22 22:36:13 UTC",
+        "ActiveEnterTimestampMonotonic": "127941477",
+        "ActiveExitTimestamp": "Tue 2026-09-22 23:20:03 UTC",
+        "ActiveExitTimestampMonotonic": "2758274495",
+        "ActiveState": "inactive",
+        "After": "sysinit.target systemd-journald.socket system.slice nss-lookup.target remote-fs.target basic.target network-online.target",
+        "AllowIsolate": "no",
+        "AssertResult": "yes",
+        "AssertTimestamp": "Tue 2026-09-22 22:36:13 UTC",
+        "AssertTimestampMonotonic": "127832617",
+        "Before": "multi-user.target shutdown.target",
+        "BindLogSockets": "no",
+        "CPUAffinityFromNUMA": "no",
+        "CPUQuotaPerSecUSec": "infinity",
+        "CPUQuotaPeriodUSec": "infinity",
+        "CPUSchedulingPolicy": "0",
+        "CPUSchedulingPriority": "0",
+        "CPUSchedulingResetOnFork": "no",
+        "CPUUsageNSec": "48755000",
+        "CPUWeight": "[not set]",
+        "CacheDirectoryAccounting": "no",
+        "CacheDirectoryMode": "0755",
+        "CacheDirectoryQuota": "[not set]",
+        "CanFreeze": "yes",
+        "CanIsolate": "no",
+        "CanLiveMount": "no",
+        "CanReload": "yes",
+        "CanStart": "yes",
+        "CanStop": "yes",
+        "CapabilityBoundingSet": "cap_chown cap_dac_override cap_dac_read_search cap_fowner cap_fsetid cap_kill cap_setgid cap_setuid cap_setpcap cap_linux_immutable cap_net_bind_service cap_net_broadcast cap_net_admin cap_net_raw cap_ipc_lock cap_ipc_owner cap_sys_module cap_sys_rawio cap_sys_chroot cap_sys_ptrace cap_sys_pacct cap_sys_admin cap_sys_boot cap_sys_nice cap_sys_resource cap_sys_time cap_sys_tty_config cap_mknod cap_lease cap_audit_write cap_audit_control cap_setfcap cap_mac_override cap_mac_admin cap_syslog cap_wake_alarm cap_block_suspend cap_audit_read cap_perfmon cap_bpf cap_checkpoint_restore",
+        "CleanResult": "success",
+        "CollectMode": "inactive",
+        "ConditionResult": "yes",
+        "ConditionTimestamp": "Tue 2026-09-22 22:36:13 UTC",
+        "ConditionTimestampMonotonic": "127832554",
+        "ConfigurationDirectoryMode": "0755",
+        "Conflicts": "shutdown.target",
+        "ControlGroupId": "5606",
+        "ControlPID": "0",
+        "CoredumpFilter": "0x33",
+        "CoredumpReceive": "no",
+        "DebugInvocation": "no",
+        "DefaultDependencies": "yes",
+        "DefaultMemoryLow": "0",
+        "DefaultMemoryMin": "0",
+        "DefaultStartupMemoryLow": "0",
+        "Delegate": "no",
+        "DelegateNamespaces": "18446744073709551615",
+        "Description": "A high performance web server and a reverse proxy server",
+        "DevicePolicy": "auto",
+        "Documentation": "\"man:nginx(8)\"",
+        "DynamicUser": "no",
+        "EffectiveMemoryHigh": "7579385856",
+        "EffectiveMemoryMax": "7579385856",
+        "EffectiveTasksMax": "8591",
+        "ExecMainCode": "1",
+        "ExecMainExitTimestamp": "Tue 2026-09-22 23:20:03 UTC",
+        "ExecMainExitTimestampMonotonic": "2758289746",
+        "ExecMainHandoffTimestampMonotonic": "0",
+        "ExecMainPID": "1323",
+        "ExecMainStartTimestamp": "Tue 2026-09-22 22:36:13 UTC",
+        "ExecMainStartTimestampMonotonic": "127930000",
+        "ExecMainStatus": "0",
+        "ExecReload": "{ path=/usr/sbin/nginx ; argv[]=/usr/sbin/nginx -g daemon on; master_process on; -s reload ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecReloadEx": "{ path=/usr/sbin/nginx ; argv[]=/usr/sbin/nginx -g daemon on; master_process on; -s reload ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStart": "{ path=/usr/sbin/nginx ; argv[]=/usr/sbin/nginx -g daemon on; master_process on; ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStartEx": "{ path=/usr/sbin/nginx ; argv[]=/usr/sbin/nginx -g daemon on; master_process on; ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStartPre": "{ path=/usr/sbin/nginx ; argv[]=/usr/sbin/nginx -t -q -g daemon on; master_process on; ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStartPreEx": "{ path=/usr/sbin/nginx ; argv[]=/usr/sbin/nginx -t -q -g daemon on; master_process on; ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStop": "{ path=/sbin/start-stop-daemon ; argv[]=/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx.pid ; ignore_errors=yes ; start_time=[Tue 2026-09-22 23:20:03 UTC] ; stop_time=[Tue 2026-09-22 23:20:03 UTC] ; pid=8232 ; code=exited ; status=0 }",
+        "ExecStopEx": "{ path=/sbin/start-stop-daemon ; argv[]=/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx.pid ; flags=ignore-failure ; start_time=[Tue 2026-09-22 23:20:03 UTC] ; stop_time=[Tue 2026-09-22 23:20:03 UTC] ; pid=8232 ; code=exited ; status=0 }",
+        "ExitType": "main",
+        "ExtensionImagePolicy": "root=verity+signed+encrypted+unprotected+absent:usr=verity+signed+encrypted+unprotected+absent:home=encrypted+unprotected+absent:srv=encrypted+unprotected+absent:tmp=encrypted+unprotected+absent:var=encrypted+unprotected+absent",
+        "FailureAction": "none",
+        "FileDescriptorStoreMax": "0",
+        "FileDescriptorStorePreserve": "restart",
+        "FinalKillSignal": "9",
+        "FragmentPath": "/usr/lib/systemd/system/nginx.service",
+        "FreezerState": "running",
+        "GID": "[not set]",
+        "GuessMainPID": "yes",
+        "IOAccounting": "no",
+        "IOReadBytes": "[not set]",
+        "IOReadOperations": "[not set]",
+        "IOSchedulingClass": "2",
+        "IOSchedulingPriority": "4",
+        "IOWeight": "[not set]",
+        "IOWriteBytes": "[not set]",
+        "IOWriteOperations": "[not set]",
+        "IPAccounting": "no",
+        "IPEgressBytes": "[no data]",
+        "IPEgressPackets": "[no data]",
+        "IPIngressBytes": "[no data]",
+        "IPIngressPackets": "[no data]",
+        "Id": "nginx.service",
+        "IgnoreOnIsolate": "no",
+        "IgnoreSIGPIPE": "yes",
+        "InactiveEnterTimestamp": "Tue 2026-09-22 23:20:03 UTC",
+        "InactiveEnterTimestampMonotonic": "2758309046",
+        "InactiveExitTimestamp": "Tue 2026-09-22 22:36:13 UTC",
+        "InactiveExitTimestampMonotonic": "127834412",
+        "InvocationID": "78ebc88b90ce4c93a3d0c31e57a73f11",
+        "JobRunningTimeoutUSec": "infinity",
+        "JobTimeoutAction": "none",
+        "JobTimeoutUSec": "infinity",
+        "KeyringMode": "private",
+        "KillMode": "mixed",
+        "KillSignal": "15",
+        "LimitAS": "infinity",
+        "LimitASSoft": "infinity",
+        "LimitCORE": "infinity",
+        "LimitCORESoft": "0",
+        "LimitCPU": "infinity",
+        "LimitCPUSoft": "infinity",
+        "LimitDATA": "infinity",
+        "LimitDATASoft": "infinity",
+        "LimitFSIZE": "infinity",
+        "LimitFSIZESoft": "infinity",
+        "LimitLOCKS": "infinity",
+        "LimitLOCKSSoft": "infinity",
+        "LimitMEMLOCK": "8388608",
+        "LimitMEMLOCKSoft": "8388608",
+        "LimitMSGQUEUE": "819200",
+        "LimitMSGQUEUESoft": "819200",
+        "LimitNICE": "0",
+        "LimitNICESoft": "0",
+        "LimitNOFILE": "524288",
+        "LimitNOFILESoft": "1024",
+        "LimitNPROC": "28637",
+        "LimitNPROCSoft": "28637",
+        "LimitRSS": "infinity",
+        "LimitRSSSoft": "infinity",
+        "LimitRTPRIO": "0",
+        "LimitRTPRIOSoft": "0",
+        "LimitRTTIME": "infinity",
+        "LimitRTTIMESoft": "infinity",
+        "LimitSIGPENDING": "28637",
+        "LimitSIGPENDINGSoft": "28637",
+        "LimitSTACK": "infinity",
+        "LimitSTACKSoft": "8388608",
+        "LiveMountResult": "success",
+        "LoadState": "loaded",
+        "LockPersonality": "no",
+        "LogLevelMax": "-1",
+        "LogRateLimitBurst": "0",
+        "LogRateLimitIntervalUSec": "0",
+        "LogsDirectoryAccounting": "no",
+        "LogsDirectoryMode": "0755",
+        "LogsDirectoryQuota": "[not set]",
+        "MainPID": "0",
+        "ManagedOOMKills": "0",
+        "ManagedOOMMemoryPressure": "auto",
+        "ManagedOOMMemoryPressureDurationUSec": "[not set]",
+        "ManagedOOMMemoryPressureLimit": "0",
+        "ManagedOOMPreference": "none",
+        "ManagedOOMSwap": "auto",
+        "MemoryAccounting": "yes",
+        "MemoryAvailable": "6899109888",
+        "MemoryCurrent": "[not set]",
+        "MemoryDenyWriteExecute": "no",
+        "MemoryHigh": "infinity",
+        "MemoryKSM": "no",
+        "MemoryLow": "0",
+        "MemoryMax": "infinity",
+        "MemoryMin": "0",
+        "MemoryPeak": "7094272",
+        "MemoryPressureThresholdUSec": "200ms",
+        "MemoryPressureWatch": "auto",
+        "MemorySwapCurrent": "[not set]",
+        "MemorySwapMax": "infinity",
+        "MemorySwapPeak": "0",
+        "MemoryZSwapCurrent": "[not set]",
+        "MemoryZSwapMax": "infinity",
+        "MemoryZSwapWriteback": "yes",
+        "MountAPIVFS": "no",
+        "MountImagePolicy": "root=verity+signed+encrypted+unprotected+absent:usr=verity+signed+encrypted+unprotected+absent:home=encrypted+unprotected+absent:srv=encrypted+unprotected+absent:tmp=encrypted+unprotected+absent:var=encrypted+unprotected+absent",
+        "NFileDescriptorStore": "0",
+        "NRestarts": "0",
+        "NUMAPolicy": "n/a",
+        "Names": "nginx.service",
+        "NeedDaemonReload": "no",
+        "Nice": "0",
+        "NoNewPrivileges": "no",
+        "NonBlocking": "no",
+        "NotifyAccess": "none",
+        "OOMKills": "0",
+        "OOMPolicy": "stop",
+        "OOMScoreAdjust": "0",
+        "OnFailureJobMode": "replace",
+        "OnSuccessJobMode": "fail",
+        "PIDFile": "/run/nginx.pid",
+        "Perpetual": "no",
+        "PrivateBPF": "no",
+        "PrivateDevices": "no",
+        "PrivateIPC": "no",
+        "PrivateMounts": "no",
+        "PrivateNetwork": "no",
+        "PrivatePIDs": "no",
+        "PrivateTmp": "no",
+        "PrivateTmpEx": "no",
+        "PrivateUsers": "no",
+        "PrivateUsersEx": "no",
+        "ProcSubset": "all",
+        "ProtectClock": "no",
+        "ProtectControlGroups": "no",
+        "ProtectControlGroupsEx": "no",
+        "ProtectHome": "no",
+        "ProtectHostname": "no",
+        "ProtectKernelLogs": "no",
+        "ProtectKernelModules": "no",
+        "ProtectKernelTunables": "no",
+        "ProtectProc": "default",
+        "ProtectSystem": "no",
+        "RefuseManualStart": "no",
+        "RefuseManualStop": "no",
+        "ReloadResult": "success",
+        "ReloadSignal": "1",
+        "RemainAfterExit": "no",
+        "RemoveIPC": "no",
+        "Requires": "system.slice sysinit.target",
+        "Restart": "no",
+        "RestartKillSignal": "15",
+        "RestartMaxDelayUSec": "infinity",
+        "RestartMode": "normal",
+        "RestartSteps": "0",
+        "RestartUSec": "100ms",
+        "RestartUSecNext": "100ms",
+        "RestrictNamespaces": "no",
+        "RestrictRealtime": "no",
+        "RestrictSUIDSGID": "no",
+        "Result": "success",
+        "RootDirectoryStartOnly": "no",
+        "RootEphemeral": "no",
+        "RootImagePolicy": "root=verity+signed+encrypted+unprotected+absent:usr=verity+signed+encrypted+unprotected+absent:home=encrypted+unprotected+absent:srv=encrypted+unprotected+absent:tmp=encrypted+unprotected+absent:var=encrypted+unprotected+absent",
+        "RuntimeDirectoryMode": "0755",
+        "RuntimeDirectoryPreserve": "no",
+        "RuntimeMaxUSec": "infinity",
+        "RuntimeRandomizedExtraUSec": "0",
+        "SameProcessGroup": "no",
+        "SecureBits": "0",
+        "SendSIGHUP": "no",
+        "SendSIGKILL": "yes",
+        "SetLoginEnvironment": "no",
+        "Slice": "system.slice",
+        "StandardError": "inherit",
+        "StandardInput": "null",
+        "StandardOutput": "journal",
+        "StartLimitAction": "none",
+        "StartLimitBurst": "5",
+        "StartLimitIntervalUSec": "10s",
+        "StartupCPUWeight": "[not set]",
+        "StartupIOWeight": "[not set]",
+        "StartupMemoryHigh": "infinity",
+        "StartupMemoryLow": "0",
+        "StartupMemoryMax": "infinity",
+        "StartupMemorySwapMax": "infinity",
+        "StartupMemoryZSwapMax": "infinity",
+        "StateChangeTimestamp": "Tue 2026-09-22 23:20:03 UTC",
+        "StateChangeTimestampMonotonic": "2758309046",
+        "StateDirectoryAccounting": "no",
+        "StateDirectoryMode": "0755",
+        "StateDirectoryQuota": "[not set]",
+        "StatusErrno": "0",
+        "StopWhenUnneeded": "no",
+        "SubState": "dead",
+        "SuccessAction": "none",
+        "SurviveFinalKillSignal": "no",
+        "SyslogFacility": "3",
+        "SyslogLevel": "6",
+        "SyslogLevelPrefix": "yes",
+        "SyslogPriority": "30",
+        "SystemCallErrorNumber": "2147483646",
+        "TTYReset": "no",
+        "TTYVHangup": "no",
+        "TTYVTDisallocate": "no",
+        "TasksAccounting": "yes",
+        "TasksCurrent": "[not set]",
+        "TasksMax": "8591",
+        "TimeoutAbortUSec": "5s",
+        "TimeoutCleanUSec": "infinity",
+        "TimeoutStartFailureMode": "terminate",
+        "TimeoutStartUSec": "1min 30s",
+        "TimeoutStopFailureMode": "terminate",
+        "TimeoutStopUSec": "5s",
+        "TimerSlackNSec": "50000",
+        "Transient": "no",
+        "Type": "forking",
+        "UID": "[not set]",
+        "UMask": "0022",
+        "UnitFilePreset": "enabled",
+        "UnitFileState": "enabled",
+        "UtmpMode": "init",
+        "WantedBy": "multi-user.target",
+        "Wants": "network-online.target",
+        "WatchdogSignal": "6",
+        "WatchdogTimestampMonotonic": "0",
+        "WatchdogUSec": "0"
+    }
+}
+
+
+

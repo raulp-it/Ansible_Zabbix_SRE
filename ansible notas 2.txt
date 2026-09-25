@@ -1,0 +1,19 @@
+Y ojo con algo que acabo de aprender: apt-cache policy nginx demuestra que el repositorio está bien, pero no que el paquete esté instalado. Eso es justamente por lo que se hace el diagnóstico por capas:
+
+changed=0
+Eso es idempotencia: Ansible comprueba que el estado deseado ya existe y no vuelve a tocar las cosas porque sí.
+
+Después de comprobar esto, hacer el primer mini-incidente: parar Nginx deliberadamente y lo diagnosticar:
+
+---
+Apagado:
+ansible -i inventory.ini sre_servers \
+  -b \
+  -m command \
+  -a "systemctl poweroff" \
+  -k -K
+
+Apagado serial:
+ansible-playbook -i inventory.ini emergency_shutdown.yml \
+  --limit pn41 \
+  -k -K
